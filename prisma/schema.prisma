@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id                  String              @id @default(uuid())
+  name                String
+  sku                 String              @unique
+  barcode             String?             @unique
+  description         String?
+  productType         ProductType
+  categoryId          String?             
+  category            ProductCategory?    @relation(fields: [categoryId], references: [id])
+  brandId             String?
+  brand               Brand?              @relation(fields: [brandId], references: [id])
+
+  costPrice           Decimal             @default(0.00)
+  salePrice           Decimal             @default(0.00)
+  currency            String              @default("USD")
+
+  uomId               String?
+  uom                 UnitOfMeasure?      @relation(fields: [uomId], references: [id])
+  stockQty            Decimal             @default(0.00)
+  reorderLevel        Decimal             @default(0.00)
+  isActive            Boolean             @default(true)
+
+  taxCategoryId       String?
+  taxCategory         TaxCategory?        @relation(fields: [taxCategoryId], references: [id])
+
+  incomeAccountId     String?
+  incomeAccount       Account?            @relation("IncomeAccount", fields: [incomeAccountId], references: [id])
+
+  expenseAccountId    String?
+  expenseAccount      Account?            @relation("ExpenseAccount", fields: [expenseAccountId], references: [id])
+
+  inventoryAccountId  String?
+  inventoryAccount    Account?            @relation("InventoryAccount", fields: [inventoryAccountId], references: [id])
+
+  defaultSupplierId   String?
+  defaultSupplier     Supplier?           @relation(fields: [defaultSupplierId], references: [id])
+  leadTimeDays        Int                 @default(0)
+
+  hasVariants         Boolean             @default(false)
+  parentId            String?
+  variants            ProductVariant[]          
+
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime?            @updatedAt
+}
+
+enum ProductType {
+  stockable
+  consumable
+  service
+}
+
+model ProductCategory {
+  id        String           @id @default(uuid())
+  name      String
+  parentId  String?
+  parent    ProductCategory? @relation("Subcategories", fields: [parentId], references: [id])
+  children  ProductCategory[] @relation("Subcategories")
+  products  Product[]
+}
+
+model UnitOfMeasure {
+  id     String    @id @default(uuid())
+  name   String
+  symbol String
+  products Product[]
+}
+
+model Brand {
+  id       String    @id @default(uuid())
+  name     String
+  products Product[]
+}
+
+model Supplier {
+  id          String   @id @default(uuid())
+  name        String
+  contactInfo Json?
+  products    Product[]
+}
+
+model ProductVariant {
+  id          String   @id @default(uuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  sku         String   @unique
+  attributes  Json
+  costPrice   Decimal  @default(0.00)
+  salePrice   Decimal  @default(0.00)
+  stockQty    Decimal  @default(0.00)
+}
+
+model TaxCategory {
+  id       String    @id @default(uuid())
+  name     String
+  products Product[]
+}
+
+model Account {
+  id                 String    @id @default(uuid())
+  code               String    @unique
+  name               String
+  incomeProducts     Product[] @relation("IncomeAccount")
+  expenseProducts    Product[] @relation("ExpenseAccount")
+  inventoryProducts  Product[] @relation("InventoryAccount")
+}
